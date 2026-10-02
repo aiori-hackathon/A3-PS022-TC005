@@ -1,0 +1,20 @@
+[package]
+name = "segfault-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+description = "DNS-aware XDP rate limiter for DNS query floods"
+
+[[bin]]
+name = "segfault"
+path = "src/main.rs"
+
+[dependencies]
+segfault-core.workspace = true
+clap.workspace = true
+
+[lints]
+workspace = true

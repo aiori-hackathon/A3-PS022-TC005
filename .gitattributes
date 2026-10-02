@@ -1,0 +1,6 @@
+# LF everywhere so scripts run inside the Linux VMs; CRLF only for Windows scripts.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.png binary
+*.pdf binary
+*.pcap binary

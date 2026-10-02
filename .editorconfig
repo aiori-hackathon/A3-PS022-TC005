@@ -1,0 +1,31 @@
+# Shared editor defaults.
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+trim_trailing_whitespace = true
+
+[*.{c,h}]
+indent_style = tab
+indent_size = 8
+
+[Makefile]
+indent_style = tab
+
+[*.sh]
+indent_style = tab
+
+[*.{rs,toml}]
+indent_style = space
+indent_size = 4
+
+[*.{yml,yaml,md}]
+indent_style = space
+indent_size = 2
+
+[*.ps1]
+end_of_line = crlf
+indent_style = space
+indent_size = 4

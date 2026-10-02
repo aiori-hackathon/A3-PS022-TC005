@@ -1,0 +1,59 @@
+# Build and lint on every push to main and every pull request.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  bpf:
+    name: bpf build + format
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install clang and libbpf
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends clang llvm libbpf-dev clang-format
+      - name: Build BPF object
+        run: make bpf
+      - name: Check C format
+        run: make lint-c
+
+  rust:
+    name: rust fmt + clippy + test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install pinned toolchain
+        run: rustup toolchain install
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+      - name: Check format and clippy
+        run: make lint-rust
+      - name: Unit tests
+        run: make test
+      - name: Release build
+        run: make rust
+
+  scripts:
+    name: shellcheck
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Lint shell scripts
+        run: make lint-sh

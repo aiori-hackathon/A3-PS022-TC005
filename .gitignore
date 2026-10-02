@@ -1,0 +1,15 @@
+# Build output
+/target/
+*.o
+*.skel.rs
+
+# Bench scratch (final results are committed)
+/results/tmp/
+*.pcap
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
