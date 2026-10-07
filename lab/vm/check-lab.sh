@@ -35,7 +35,7 @@ probe "ping $peer6" ping -6 -c 2 -W 1 -I "$iface" "$peer6"
 
 driver="$(ethtool -i "$iface" 2>/dev/null | awk '/^driver:/{print $2}')"
 case "$driver" in
-virtio_net | ixgbe | i40e | ice | mlx5_core | veth) ok "driver $driver supports native XDP" ;;
+virtio_net | hv_netvsc | ixgbe | i40e | ice | mlx5_core | veth) ok "driver $driver supports native XDP" ;;
 "") bad "cannot read driver for $iface" ;;
 *) info "driver $driver: expect generic XDP mode" ;;
 esac
