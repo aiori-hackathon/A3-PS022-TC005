@@ -22,8 +22,10 @@ if ! ip link show "$iface" >/dev/null 2>&1; then
 	exit 1
 fi
 
-conf=/etc/netplan/60-segfault-lab.yaml
-cat >"$conf" <<NETPLAN
+# Netplan on Ubuntu, NetworkManager on Kali/Debian; only the lab NIC is touched.
+if command -v netplan >/dev/null 2>&1; then
+	conf=/etc/netplan/60-segfault-lab.yaml
+	cat >"$conf" <<NETPLAN
 network:
   version: 2
   ethernets:
@@ -33,10 +35,22 @@ network:
       accept-ra: false
       addresses: [$v4/24, "$v6/64"]
 NETPLAN
-chmod 600 "$conf"
-netplan apply
+	chmod 600 "$conf"
+	netplan apply
+	hostnamectl set-hostname "$host"
+elif command -v nmcli >/dev/null 2>&1; then
+	nmcli connection delete segfault-lab >/dev/null 2>&1 || true
+	nmcli connection add type ethernet ifname "$iface" con-name segfault-lab \
+		connection.autoconnect yes connection.autoconnect-priority 100 \
+		ipv4.method manual ipv4.addresses "$v4/24" ipv4.never-default yes \
+		ipv6.method manual ipv6.addresses "$v6/64" ipv6.never-default yes ipv6.addr-gen-mode eui64
+	nmcli connection up segfault-lab
+	echo "hostname left as $(hostname) (NetworkManager host)"
+else
+	echo "neither netplan nor nmcli found" >&2
+	exit 1
+fi
 
-hostnamectl set-hostname "$host"
 sed -i '/# segfault-lab$/d' /etc/hosts
 printf '%s\n' \
 	"10.53.0.10 segfault-target # segfault-lab" \

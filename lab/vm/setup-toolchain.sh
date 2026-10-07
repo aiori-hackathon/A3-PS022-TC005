@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs the Segfault build and lab toolchain on Ubuntu 24.04 (roles: target, gen, all, ci).
+# Installs the Segfault build and lab toolchain on Ubuntu 24.04 or Kali/Debian (roles: target, gen, all, ci).
 set -euo pipefail
 
 role="${1:-all}"
@@ -20,18 +20,30 @@ user="${SUDO_USER:-root}"
 
 # shellcheck source=/dev/null
 . /etc/os-release
-if [[ "${VERSION_ID:-}" != "24.04" ]]; then
-	echo "warning: tested on Ubuntu 24.04, found ${PRETTY_NAME:-unknown}" >&2
-fi
+distro="${ID:-unknown}"
+case "$distro" in
+ubuntu)
+	if [[ "${VERSION_ID:-}" != "24.04" ]]; then
+		echo "warning: tested on Ubuntu 24.04, found ${PRETTY_NAME:-unknown}" >&2
+	fi
+	;;
+kali | debian) echo "==> ${PRETTY_NAME:-$distro}: using Debian package names" ;;
+*) echo "warning: untested distro ${PRETTY_NAME:-unknown}" >&2 ;;
+esac
 
 export DEBIAN_FRONTEND=noninteractive
 pkgs=(build-essential clang llvm libbpf-dev libelf-dev zlib1g-dev pkg-config linux-libc-dev
-	iproute2 ethtool tcpdump dnsutils git curl ca-certificates jq clang-format shellcheck)
+	iproute2 ethtool tcpdump bind9-dnsutils git curl ca-certificates jq clang-format shellcheck)
 
+# bpftool ships in linux-tools on Ubuntu and as its own package on Kali/Debian.
 if [[ "$role" != "ci" ]]; then
-	pkgs+=(linux-tools-common linux-tools-generic)
-	if apt-cache show "linux-tools-$(uname -r)" >/dev/null 2>&1; then
-		pkgs+=("linux-tools-$(uname -r)")
+	if [[ "$distro" == "ubuntu" ]]; then
+		pkgs+=(linux-tools-common linux-tools-generic)
+		if apt-cache show "linux-tools-$(uname -r)" >/dev/null 2>&1; then
+			pkgs+=("linux-tools-$(uname -r)")
+		fi
+	else
+		pkgs+=(bpftool)
 	fi
 fi
 [[ "$role" == "target" || "$role" == "all" ]] && pkgs+=(unbound nftables)
