@@ -18,7 +18,6 @@
 | Deliverable | Link |
 |---|---|
 | Presentation (PDF) | [A3-PS022-TC005_Segfault.pdf](A3-PS022-TC005_Segfault.pdf) |
-| Presentation (PowerPoint) | [A3-PS022-TC005_Segfault.pptx](A3-PS022-TC005_Segfault.pptx) |
 | Team introduction video | _YouTube link will be added here_ |
 | Source code and working demo | Due 31 Oct 2026 (Level 2) |
 
@@ -35,7 +34,6 @@ Under a DNS query flood, a Linux server fails twice: it **burns CPU on every pac
 - **Spoofing:** forged source addresses defeat simple per-source limits.
 - **Pulses and random subdomains:** bursts beat slow averages, and unique names bypass the resolver cache.
 
-![Receive path: Linux today vs Segfault](docs/img/rx-path.png)
 
 ---
 
@@ -62,7 +60,6 @@ Over budget, traffic gets a rate-limited **truncated reply (TC-slip)**, so real 
 
 Only the XDP program touches every packet. The other components run off the hot path.
 
-![Segfault architecture](docs/img/architecture.png)
 
 **Stack:** XDP datapath in C (libbpf) · control plane and CLI in Rust · Unbound, BIND or CoreDNS as the protected DNS server.
 
@@ -87,7 +84,6 @@ Only the XDP program touches every packet. The other components run off the hot 
 
 ## Timeline
 
-![Timeline of delivery](docs/img/timeline.png)
 
 | Date | Milestone |
 |---|---|
