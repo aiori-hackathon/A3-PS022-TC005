@@ -18,7 +18,7 @@
 | Deliverable | Link |
 |---|---|
 | Presentation (PDF) | [A3-PS022-TC005_Segfault.pdf](A3-PS022-TC005_Segfault.pdf) |
-| Team introduction video | _YouTube link will be added here_ |
+| Team introduction video | [Watch on YouTube](https://youtu.be/OXa8lPYKOgs) |
 | Source code and working demo | Due 31 Oct 2026 (Level 2) |
 
 > All performance figures in the presentation are **targets, to be validated**, unless marked as measured.
