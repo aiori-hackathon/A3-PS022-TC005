@@ -14,7 +14,6 @@
 Our Level 1 deliverables were submitted on time; the commit history of this repository records them.
 Detailed material is withheld from public view while the competition is in progress and will be published after the results.
 
-## License
+## Authors
 
-Copyright (c) 2026 Team Segfault (Debangan Mali, Saraswata Chatterjee, Partha Chakraborty). All rights reserved.
-No part of this work may be copied, reused or submitted elsewhere without written permission from the authors.
+Developed by Team Segfault (Debangan Mali, Saraswata Chatterjee, Partha Chakraborty) for AIORI Hackathon 3.
