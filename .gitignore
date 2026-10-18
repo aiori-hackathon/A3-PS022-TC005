@@ -13,3 +13,6 @@
 *.swp
 .DS_Store
 Thumbs.db
+
+# Submission repo kept separately
+/A3-PS022-TC005/
