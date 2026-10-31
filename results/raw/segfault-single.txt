@@ -1,0 +1,1 @@
+RESULT scenario=single flood_pps=200000 flood_sent=9711075 probe_sent=2712 probe_ok=2712 goodput=1.0000 collateral=0.0000 p50_us=165 p99_us=485
