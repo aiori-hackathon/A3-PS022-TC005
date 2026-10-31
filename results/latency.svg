@@ -1,0 +1,51 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 460' font-family='system-ui,sans-serif'>
+<rect width='900' height='460' fill='white'/>
+<text x='70' y='22' font-size='16' font-weight='600'>Legitimate query p99 latency under attack (log scale — lower is better)</text>
+<line x1='70' y1='390.0' x2='720.0' y2='390.0' stroke='#eee'/><text x='64.0' y='394.0' font-size='11' text-anchor='end' fill='#666'>10us</text>
+<line x1='70' y1='320.0' x2='720.0' y2='320.0' stroke='#eee'/><text x='64.0' y='324.0' font-size='11' text-anchor='end' fill='#666'>100us</text>
+<line x1='70' y1='250.0' x2='720.0' y2='250.0' stroke='#eee'/><text x='64.0' y='254.0' font-size='11' text-anchor='end' fill='#666'>1ms</text>
+<line x1='70' y1='180.0' x2='720.0' y2='180.0' stroke='#eee'/><text x='64.0' y='184.0' font-size='11' text-anchor='end' fill='#666'>10ms</text>
+<line x1='70' y1='110.0' x2='720.0' y2='110.0' stroke='#eee'/><text x='64.0' y='114.0' font-size='11' text-anchor='end' fill='#666'>100ms</text>
+<line x1='70' y1='40.0' x2='720.0' y2='40.0' stroke='#eee'/><text x='64.0' y='44.0' font-size='11' text-anchor='end' fill='#666'>1s</text>
+<text x='124.2' y='410.0' font-size='12' text-anchor='middle'>adaptive</text>
+<rect x='80.8' y='65.5' width='15.9' height='324.5' fill='#9aa0a6'/>
+<rect x='98.2' y='54.5' width='15.9' height='335.5' fill='#5b8ff9'/>
+<rect x='115.5' y='64.2' width='15.9' height='325.8' fill='#2f6fb0'/>
+<rect x='132.8' y='66.3' width='15.9' height='323.7' fill='#f2994a'/>
+<rect x='150.2' y='244.5' width='15.9' height='145.5' fill='#27ae60'/>
+<text x='232.5' y='410.0' font-size='12' text-anchor='middle'>distributed</text>
+<rect x='189.2' y='58.5' width='15.9' height='331.5' fill='#9aa0a6'/>
+<rect x='206.5' y='59.4' width='15.9' height='330.6' fill='#5b8ff9'/>
+<rect x='223.8' y='55.8' width='15.9' height='334.2' fill='#2f6fb0'/>
+<rect x='241.2' y='66.8' width='15.9' height='323.2' fill='#f2994a'/>
+<rect x='258.5' y='243.0' width='15.9' height='147.0' fill='#27ae60'/>
+<text x='340.8' y='410.0' font-size='12' text-anchor='middle'>prefix-spoof</text>
+<rect x='297.5' y='390.0' width='15.9' height='0.0' fill='#9aa0a6'/>
+<rect x='314.8' y='390.0' width='15.9' height='0.0' fill='#5b8ff9'/>
+<rect x='332.2' y='390.0' width='15.9' height='0.0' fill='#2f6fb0'/>
+<rect x='349.5' y='390.0' width='15.9' height='0.0' fill='#f2994a'/>
+<rect x='366.8' y='269.2' width='15.9' height='120.8' fill='#27ae60'/>
+<text x='449.2' y='410.0' font-size='12' text-anchor='middle'>pulse</text>
+<rect x='405.8' y='88.6' width='15.9' height='301.4' fill='#9aa0a6'/>
+<rect x='423.2' y='88.3' width='15.9' height='301.7' fill='#5b8ff9'/>
+<rect x='440.5' y='88.7' width='15.9' height='301.3' fill='#2f6fb0'/>
+<rect x='457.8' y='87.5' width='15.9' height='302.5' fill='#f2994a'/>
+<rect x='475.2' y='260.5' width='15.9' height='129.5' fill='#27ae60'/>
+<text x='557.5' y='410.0' font-size='12' text-anchor='middle'>single</text>
+<rect x='514.2' y='88.6' width='15.9' height='301.4' fill='#9aa0a6'/>
+<rect x='531.5' y='88.6' width='15.9' height='301.4' fill='#5b8ff9'/>
+<rect x='548.8' y='88.5' width='15.9' height='301.5' fill='#2f6fb0'/>
+<rect x='566.2' y='87.7' width='15.9' height='302.3' fill='#f2994a'/>
+<rect x='583.5' y='258.8' width='15.9' height='131.2' fill='#27ae60'/>
+<text x='665.8' y='410.0' font-size='12' text-anchor='middle'>water-torture</text>
+<rect x='622.5' y='51.7' width='15.9' height='338.3' fill='#9aa0a6'/>
+<rect x='639.8' y='63.0' width='15.9' height='327.0' fill='#5b8ff9'/>
+<rect x='657.2' y='55.9' width='15.9' height='334.1' fill='#2f6fb0'/>
+<rect x='674.5' y='68.5' width='15.9' height='321.5' fill='#f2994a'/>
+<rect x='691.8' y='246.8' width='15.9' height='143.2' fill='#27ae60'/>
+<rect x='730.0' y='40.0' width='14' height='14' fill='#9aa0a6'/><text x='750.0' y='52.0' font-size='12'>fixed-xdp</text>
+<rect x='730.0' y='62.0' width='14' height='14' fill='#5b8ff9'/><text x='750.0' y='74.0' font-size='12'>nftables</text>
+<rect x='730.0' y='84.0' width='14' height='14' fill='#2f6fb0'/><text x='750.0' y='96.0' font-size='12'>nftables-netdev</text>
+<rect x='730.0' y='106.0' width='14' height='14' fill='#f2994a'/><text x='750.0' y='118.0' font-size='12'>none</text>
+<rect x='730.0' y='128.0' width='14' height='14' fill='#27ae60'/><text x='750.0' y='140.0' font-size='12'>segfault</text>
+</svg>
