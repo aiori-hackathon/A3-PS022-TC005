@@ -1,0 +1,5 @@
+segfault up on eth1 algo=segfault mode=guard shadow=false
+controller: capacity=20000 qps, tick 500ms (Ctrl-C to detach)
+mode guard -> siege (admit=3627qps, dropping 99% of 464k pps, resp_ratio=1.00)
+mode siege -> guard (admit=0qps, dropping 0% of 0k pps, resp_ratio=1.00)
+controller stopped; datapath stays attached (run `segfault down` to remove)

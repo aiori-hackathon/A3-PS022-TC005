@@ -1,0 +1,1 @@
+RESULT scenario=water-torture flood_pps=200000 flood_sent=3078881 probe_sent=89 probe_ok=77 goodput=0.8652 collateral=0.1348 p50_us=29258 p99_us=722050
