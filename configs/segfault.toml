@@ -1,0 +1,21 @@
+# Segfault runtime policy. Rates are queries/sec; run `segfault calibrate` to set capacity_qps.
+capacity_qps = 20000.0      # measured server knee capacity
+proven_share = 0.5          # fraction of capacity reserved for proven (T2) clients
+unknown_share = 0.3         # fraction of the remainder the unknown (T0) pool may use
+src_qps = 50.0              # per returning-source rate
+src_burst = 100.0           # per-source burst (queries)
+prefix_qps = 2000.0         # per /24 (v4) or /48 (v6) rate
+prefix_burst = 4000.0
+promote_qps = 200.0         # unknown -> returning promotions per second
+promote_burst = 400.0
+heavy_threshold = 2000      # sketch count over the window that marks an unknown source "heavy"
+promote_min = 2             # sketch range of a well-behaved, promotable source
+promote_max = 400
+strikes_ban = 20            # over-limit strikes before a returning source is banned
+ban_secs = 30.0
+proven_ttl_secs = 300.0
+cost_any = 8                # cost multipliers: ANY, DO bit, large-response qtypes
+cost_do = 2
+cost_big = 3
+slip_k = 2                  # 1-in-k over-budget unknown queries gets a TC reply (0 disables)
+learn_in_calm = true
