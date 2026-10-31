@@ -15,6 +15,13 @@ path = "src/main.rs"
 [dependencies]
 segfault-core.workspace = true
 clap.workspace = true
+anyhow.workspace = true
+libbpf-rs.workspace = true
+libbpf-sys = "1.5"
+toml.workspace = true
+libc = "0.2"
+ratatui.workspace = true
+crossterm.workspace = true
 
 [lints]
 workspace = true

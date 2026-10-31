@@ -17,6 +17,9 @@ if [[ $EUID -ne 0 ]]; then
 	exec sudo bash "$0" "$@"
 fi
 
+# Native XDP on hv_netvsc/virtio needs LRO (and GRO) off.
+ethtool -K "$iface" lro off gro off 2>/dev/null || true
+
 if ! ip link show "$iface" >/dev/null 2>&1; then
 	echo "no interface '$iface'; pick the lab NIC from 'ip -br link'" >&2
 	exit 1

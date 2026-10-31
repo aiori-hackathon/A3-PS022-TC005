@@ -1,64 +1,63 @@
-# Lab setup (Part 0)
+# Lab setup
 
-Two Ubuntu 24.04 VMs on an isolated internal network: `segfault-target` runs the DNS server and Segfault, `segfault-gen` runs the flood generator and legitimate clients.
+Two Linux VMs on an isolated Hyper-V private switch `segfault-lab`: `segfault-target` runs the
+DNS server (Unbound) and Segfault; the gen VM (Kali) runs the flood generator and the legitimate
+prober. Spoofed traffic never leaves the private switch.
 
-| VM | Lab IPv4 | Lab IPv6 | vCPU | RAM | Disk |
-| --- | --- | --- | --- | --- | --- |
-| segfault-target | 10.53.0.10/24 | fd53::10/64 | 2–4 | 2 GB | 25 GB |
-| segfault-gen | 10.53.0.20/24 | fd53::20/64 | 2–4 | 2 GB | 25 GB |
+| VM | Lab IPv4 | Lab IPv6 | Role |
+| --- | --- | --- | --- |
+| segfault-target | 10.53.0.10/24 | fd53::10/64 | DNS server + Segfault |
+| segfault-gen (Kali) | 10.53.0.20/24 | fd53::20/64 | flood + prober |
 
-Each VM has two NICs: **NIC 1 = NAT** (internet for apt and cargo) and **NIC 2 = internal network `segfault-lab`**, virtio-net, for all test traffic. Spoofed traffic never leaves NIC 2.
+Each VM has two NICs: **eth0 = Default Switch** (internet for apt/cargo) and **eth1 =
+segfault-lab** (all test traffic). On Hyper-V, `hv_netvsc` supports native XDP.
 
-## 1. Create the VMs (VirtualBox on Windows)
-
-Download the Ubuntu 24.04 **server** ISO, then in PowerShell from the repo root:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File lab\vm\create-vms.ps1 -Iso "D:\ISO\ubuntu-24.04-live-server-amd64.iso"
-```
-
-Add `-Unattended` to let VirtualBox install Ubuntu automatically (user `segfault`, password `segfault`; change it after first login). Without it, install Ubuntu by hand in each VM window and tick **Install OpenSSH server**.
-
-Using VMware or Hyper-V instead: create the same two VMs by hand, give NIC 2 a host-only or private switch with no uplink, and pick a VMXNET3/virtio-class adapter if offered.
-
-## 2. Toolchain (both VMs)
+## Toolchain
 
 ```bash
 sudo apt-get update && sudo apt-get install -y git make
-git clone https://github.com/DebanganMALI/Segfault.git && cd Segfault
-make setup ROLE=target      # on segfault-gen: make setup ROLE=gen
+# clone from your local sync (no GitHub needed): see the offline workflow
+cd ~/segfault
+make setup ROLE=target     # on the gen VM: make setup ROLE=gen
 source ~/.cargo/env
 ```
 
-## 3. Lab network (both VMs)
-
-Find the lab NIC (usually `enp0s8`) with `ip -br link`, then:
+## Network
 
 ```bash
-make net ROLE=target IFACE=enp0s8   # on segfault-gen: make net ROLE=gen IFACE=enp0s8
+sudo make net ROLE=target IFACE=eth1    # on gen: ROLE=gen
+make check ROLE=target IFACE=eth1
 ```
 
-## 4. Check and build
+## Build and verify
 
 ```bash
-make check ROLE=target IFACE=enp0s8   # on segfault-gen: ROLE=gen
-make build
-make verify                           # target VM: kernel verifier accepts the object
+make build            # BPF object + Rust release binaries
+make test             # Rust unit tests
+make test-c           # userspace parser tests
+make verify           # load the datapath through the kernel verifier
 ```
 
-`check` reports whether the NIC driver supports native XDP (`virtio_net` does). If it does not, Segfault falls back to generic mode, which PS-022 allows; record the mode with every result.
+## Run
 
-## Part 0 done when
-
-- `make setup && make build` succeeds on the target VM.
-- Both VMs ping each other over IPv4 and IPv6 on the lab network.
-- CI is green on `main`; tag `v0.0.1`.
-
-## Before benchmarking
-
-Cut NIC 1 during runs so nothing reaches the internet:
-
-```powershell
-& "$env:ProgramFiles\Oracle\VirtualBox\VBoxManage.exe" controlvm segfault-target setlinkstate1 off
-& "$env:ProgramFiles\Oracle\VirtualBox\VBoxManage.exe" controlvm segfault-gen setlinkstate1 off
+```bash
+# server (target):
+sudo ./target/release/segfault up -i eth1 --config configs/segfault.toml
+# client (gen; spoofing needs raw sockets, so sudo or the setcap below):
+sudo ./target/release/segfault-gen run --server 10.53.0.10 --scenario single --pps 200000 --secs 20
 ```
+
+## Benchmark
+
+Passwordless SSH from target to the gen VM is needed so the orchestrator can trigger the load:
+
+```bash
+ssh-keygen -t ed25519           # on target, if you have no key
+ssh-copy-id kali@kali.mshome.net
+# on gen, after every build: let the flood spoof sources without sudo
+sudo setcap cap_net_raw+ep target/release/segfault-gen
+IFACE=eth1 GEN_HOST=kali@kali.mshome.net bash lab/bench/run.sh
+./target/release/segfault-bench results/raw -o results
+```
+
+Outputs `results/results.csv`, `results/goodput.svg` and `results/report.md`.

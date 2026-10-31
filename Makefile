@@ -9,11 +9,11 @@ BPF_SRC := $(wildcard bpf/*.c)
 BPF_HDR := $(wildcard bpf/*.h)
 ARCH := $(shell uname -m | sed -e 's/x86_64/x86/' -e 's/aarch64/arm64/')
 MULTIARCH := $(shell gcc -print-multiarch 2>/dev/null)
-BPF_CFLAGS := -O2 -g -Wall -Werror -target bpf -D__TARGET_ARCH_$(ARCH) -I/usr/include/$(MULTIARCH) -Ibpf
+BPF_CFLAGS := -O2 -g -Wall -Werror -target bpf -mcpu=v3 -D__TARGET_ARCH_$(ARCH) -I/usr/include/$(MULTIARCH) -Ibpf
 SH_FILES := $(shell find lab -name '*.sh')
 PIN_TEST := /sys/fs/bpf/segfault_verify
 
-.PHONY: help setup net check build bpf rust test verify fmt lint lint-c lint-rust lint-sh clean
+.PHONY: help setup net check build bpf rust test test-c verify fmt lint lint-c lint-rust lint-sh e2e fuzz clean
 
 help: ## Show targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
@@ -38,8 +38,19 @@ $(BPF_OBJ): $(BPF_SRC) $(BPF_HDR)
 rust: ## Build release binaries
 	cargo build --release --locked
 
-test: ## Run unit tests
+test: ## Run Rust unit tests
 	cargo test --workspace --locked
+
+test-c: ## Run userspace parser tests
+	$(CLANG) -O1 -g -I/usr/include/$(MULTIARCH) -Ibpf -o $(BPF_OUT)/parse_test tests/bpf/parse_test.c
+	$(BPF_OUT)/parse_test
+
+e2e: build ## Single-host netns smoke test (needs root)
+	sudo bash lab/netns/e2e.sh
+
+fuzz: ## Fuzz the parser (needs clang; runs 60s)
+	clang -O1 -g -fsanitize=fuzzer -I/usr/include/$(MULTIARCH) -Ibpf -o $(BPF_OUT)/fuzz_parse tests/bpf/fuzz_parse.c
+	$(BPF_OUT)/fuzz_parse -max_total_time=60
 
 verify: $(BPF_OBJ) ## Load the BPF object through the kernel verifier
 	sudo bpftool prog load $(BPF_OBJ) $(PIN_TEST)

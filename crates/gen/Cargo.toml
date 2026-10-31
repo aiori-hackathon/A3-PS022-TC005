@@ -6,6 +6,16 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 publish.workspace = true
+description = "Synthetic DNS load generator and legitimate prober for the Segfault lab"
+
+[[bin]]
+name = "segfault-gen"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+libc = "0.2"
 
 [lints]
 workspace = true
