@@ -1,0 +1,1 @@
+RESULT scenario=distributed flood_pps=200000 flood_sent=4468051 probe_sent=44 probe_ok=28 goodput=0.6364 collateral=0.3636 p50_us=350984 p99_us=593934
