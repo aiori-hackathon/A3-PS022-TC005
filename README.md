@@ -1,16 +1,21 @@
+<p align="center">
+  <img src="docs/banner.png" alt="Segfault — line-rate DNS flood defence in the Linux kernel" width="100%">
+</p>
 
+<p align="center">
+  <b><i>Drop the flood. Keep the queries.</i></b><br>
+  Line-rate DNS flood defence in the Linux kernel — built on eBPF / XDP
+</p>
 
-# 🛡️ Segfault
+<p align="center">
+  <img src="https://img.shields.io/badge/eBPF-XDP-10B981?style=for-the-badge" alt="eBPF/XDP">
+  <img src="https://img.shields.io/badge/Rust-controller-000000?style=for-the-badge&logo=rust" alt="Rust">
+  <img src="https://img.shields.io/badge/C-datapath-00599C?style=for-the-badge&logo=c" alt="C">
+  <img src="https://img.shields.io/badge/Linux-6.8-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Linux 6.8">
+  <img src="https://img.shields.io/badge/AIORI-PS--022-34D399?style=for-the-badge" alt="PS-022">
+</p>
 
-### *Drop the flood. Keep the queries.*
-
-**Line-rate DNS flood defence in the Linux kernel — built on eBPF / XDP**
-
-![eBPF](https://img.shields.io/badge/eBPF-XDP-10B981?style=for-the-badge)
-![Rust](https://img.shields.io/badge/Rust-controller-000000?style=for-the-badge&logo=rust)
-![C](https://img.shields.io/badge/C-datapath-00599C?style=for-the-badge&logo=c)
-![Linux](https://img.shields.io/badge/Linux-6.8-FCC624?style=for-the-badge&logo=linux&logoColor=black)
-![PS-022](https://img.shields.io/badge/AIORI-PS--022-34D399?style=for-the-badge)
+<div align="center">
 
 | | |
 |---|---|
@@ -20,11 +25,11 @@
 | **Problem statement** | PS-022 — eBPF/XDP Rate Limiting for DNS Query Floods in a Lab |
 | **Category** | Cybersecurity |
 
-
+</div>
 
 ---
 
-## 📌 The problem
+## The problem
 
 A DNS resolver does real work for every query — parsing, cache lookup, and on a miss a full upstream recursion. Attackers exploit that asymmetry: UDP source addresses are trivially forged, so a flood can bury legitimate users before the link is even full. Classic defences (RRL, nftables hashlimit, fixed-threshold XDP) cap one number — the **rate** — which is exactly the number an attacker tunes around:
 
@@ -34,9 +39,9 @@ A DNS resolver does real work for every query — parsing, cache lookup, and on 
 
 Against all three, every baseline we tested dropped the real client to **zero**.
 
-## 💡 Our approach
+## Our approach
 
-Segfault replaces *“how fast is this source?”* with two questions — **who is this, and what does the query cost?** — and enforces the answer in the NIC driver, before the kernel allocates a socket buffer.
+Segfault replaces *"how fast is this source?"* with two questions — **who is this, and what does the query cost?** — and enforces the answer in the NIC driver, before the kernel allocates a socket buffer.
 
 1. **Trust by proof** — a source earns standing by proving a real return path (TCP or an RFC 9018 cookie), which an off-path spoofer cannot fake.
 2. **Cost, not count** — each query is priced by the work it forces on the server.
@@ -44,20 +49,20 @@ Segfault replaces *“how fast is this source?”* with two questions — **who 
 
 ---
 
-## 🎬 Demo & documents
+## Demo & documents
 
 | | |
 |---|---|
-| ▶️ **Demo video** | [Watch on YouTube](https://youtu.be/PQQvaYzG-lU) |
-| 📊 **Presentation deck (PDF)** | [`submission/Segfault_Deck.pdf`](submission/Segfault_Deck.pdf) |
-| 📄 **Project report (PDF)** | [`submission/Segfault_Submission.pdf`](submission/Segfault_Submission.pdf) |
+| **Demo video** | [Watch on YouTube](https://youtu.be/PQQvaYzG-lU) |
+| **Presentation deck (PDF)** | [`submission/Segfault_Deck.pdf`](submission/Segfault_Deck.pdf) |
+| **Project report (PDF)** | [`submission/Segfault_Submission.pdf`](submission/Segfault_Submission.pdf) |
 
 ---
 
-## 🧮 The mathematics
+## The mathematics
 
-
-GCRA token buckets
+<details open>
+<summary><b>GCRA token buckets</b></summary>
 
 Every pool, source and prefix is limited by a Generic Cell Rate Algorithm bucket — a leaky bucket with no timers, stored as one nanosecond timestamp and updated with a lock-free CAS. With rate $\lambda$ and burst $B$:
 
@@ -72,54 +77,54 @@ and on admission
 $$\text{TAT} \leftarrow \max(t_a,\ \text{TAT}) + w \cdot T$$
 
 A rejected query does not advance the bucket, so a rejected flood cannot starve later legitimate queries.
+</details>
 
-
-
-Capacity allocation
+<details>
+<summary><b>Capacity allocation</b></summary>
 
 With measured capacity $C$ and proven / unknown shares $\sigma_p,\ \sigma_u$:
 
 $$\lambda_{T2} = C\,\sigma_p, \qquad \lambda_{T0} = (C - \lambda_{T2})\,\sigma_u, \qquad \lambda_{T1} = \max\big((C-\lambda_{T2})(1-\sigma_u),\ 0.05\,C\big)$$
 
 Lab defaults $C = 20{,}000$, $\sigma_p = 0.5$, $\sigma_u = 0.3$ reserve 10,000 q/s for proven clients and cap unknown traffic at 3,000 q/s.
+</details>
 
-
-
-Count-Min sketch (stateless T0)
+<details>
+<summary><b>Count-Min sketch (stateless T0)</b></summary>
 
 $$\hat{c}(x) = \min_{1 \le j \le d} C\big[j,\ h_j(x) \bmod w\big]$$
 
 $$\hat{c}(x) \le c(x) + \varepsilon N \quad \text{with probability} \ge 1-\delta, \qquad w = \lceil e/\varepsilon \rceil,\ d = \lceil \ln(1/\delta) \rceil$$
 
 $O(d)$ memory touches per packet, independent of how many sources are spoofed.
+</details>
 
-
-
-Cost weighting
+<details>
+<summary><b>Cost weighting</b></summary>
 
 $$w = w_0 \cdot m_{\text{ANY}}^{[\text{ANY}]} \cdot m_{\text{DO}}^{[\text{DO}]} \cdot m_{\text{big}}^{[\text{large}]} \cdot z(\text{zone})$$
 
 Defaults $m_{\text{ANY}} = 8,\ m_{\text{DO}} = 2,\ m_{\text{big}} = 3$; $z(\text{zone})$ rises for zones whose NXDOMAIN ratio exceeds 0.2 or 0.5.
+</details>
 
-
-
-Proof of address — RFC 9018 cookie
+<details>
+<summary><b>Proof of address — RFC 9018 cookie</b></summary>
 
 $$SC = \text{SipHash-2-4}_k(\text{client-cookie} \,\|\, \text{version} \,\|\, \text{reserved} \,\|\, \text{timestamp} \,\|\, \text{client-IP})$$
 
 The client IP is an authenticated input, so a cookie minted for one address is invalid from any other.
+</details>
 
-
-
-Bounded reflection (TC-slip)
+<details>
+<summary><b>Bounded reflection (TC-slip)</b></summary>
 
 $$\text{reflected rate} \le \frac{1}{k}\,\lambda_{\text{flood}}, \qquad A = \frac{\text{bytes}_{\text{out}}}{\text{bytes}_{\text{in}}} \le 1$$
 
 Reflection is bounded, not eliminated. Lab setting $k = 2$.
+</details>
 
-
-
-Adaptive controller
+<details>
+<summary><b>Adaptive controller</b></summary>
 
 With load $L = a/C$, drop-fraction $\varphi = b/(a+b)$ and response ratio $\rho$:
 
@@ -127,18 +132,18 @@ $$\text{busy} = (L \ge 0.7) \lor (\varphi > 0.2) \lor (\rho < 0.98)$$
 
 $$\text{under\_attack} = (\varphi > 0.6) \lor (\rho < 0.85)$$
 
-CALM → GUARD on *busy*, GUARD → SIEGE on *under_attack*. Escalation is immediate; de-escalation needs 10 s of stability.
+CALM → GUARD on *busy*, GUARD → SIEGE on *under\_attack*. Escalation is immediate; de-escalation needs 10 s of stability.
+</details>
 
-
-
-Throughput ceiling
+<details>
+<summary><b>Throughput ceiling</b></summary>
 
 $$C_{\max} = \min\!\left(R_{\text{line}},\ N_{\text{core}} \cdot \frac{f}{c}\right), \qquad c \approx 290\ \text{cycles/packet}$$
-
+</details>
 
 ---
 
-## 🔍 How it solves the problem
+## How it solves the problem
 
 ```text
                  ┌──────────────────────────── XDP ingress (NIC driver) ────────────────────────────┐
@@ -159,7 +164,7 @@ An attacker who cannot complete a round-trip can never reach T2, however many so
 
 ---
 
-## 🧾 Pseudocode
+## Pseudocode
 
 ```text
 fn admit(pkt, cfg, state) -> verdict:
@@ -182,7 +187,7 @@ Full version: [`docs/pseudocode.md`](docs/pseudocode.md)
 
 ---
 
-## 📈 Results
+## Results
 
 *Legitimate queries completed / p99 latency. Median of 3 runs. Higher queries and lower p99 are better.*
 
@@ -211,7 +216,7 @@ Full version: [`docs/pseudocode.md`](docs/pseudocode.md)
 
 ---
 
-## 🧰 What Segfault is, and how to use it
+## What Segfault is, and how to use it
 
 Segfault is **two eBPF programs plus a userspace daemon**. The `segfault` CLI loads and pins the XDP and tc programs, then runs as a long-lived controller that polls the counters and re-tunes the datapath. State lives in pinned BPF maps under `/sys/fs/bpf/segfault`, so the datapath keeps running even if the controller restarts.
 
@@ -230,7 +235,7 @@ Segfault is **two eBPF programs plus a userspace daemon**. The `segfault` CLI lo
 
 ---
 
-## 📊 Benchmarks
+## Benchmarks
 
 Five baselines — no filter, nftables prerouting, nftables netdev-ingress, a fixed-threshold XDP limiter (the rival design), and Segfault — across six scenarios.
 
@@ -243,7 +248,7 @@ Method and integrity checks: [`docs/benchmarks.md`](docs/benchmarks.md)
 
 ---
 
-## ⚙️ Build and run
+## Build and run
 
 ```bash
 make setup ROLE=target        # clang, libbpf, bpftool, Rust, Unbound
@@ -260,14 +265,14 @@ sudo ./target/release/segfault down -i eth1
 
 Single-host smoke test, no second VM needed: `sudo make e2e`
 
-## 🔐 Two proof paths to “proven” (T2)
+## Two proof paths to "proven" (T2)
 
 1. **TCP** — a client that answers a TC-slip over TCP is seen by the egress observer and promoted.
 2. **RFC 9018 DNS cookie** — verified in XDP with SipHash-2-4 against a secret shared with the resolver.
 
 A spoofer can do neither. Set the same secret on Segfault (`segfault cookie-secret`) and Unbound (`cookie-secret:` in `lab/dns/unbound.conf`).
 
-## 🧠 Three ideas
+## Three ideas
 
 1. **Trust before rate.** Unknown sources get no per-source state, only a fixed-memory sketch, so a spoofed flood can never exhaust memory.
 2. **Cost, not count.** ANY queries, the DNSSEC DO bit, large types and high-NXDOMAIN zones all cost more tokens.
@@ -275,47 +280,49 @@ A spoofer can do neither. Set the same secret on Segfault (`segfault cookie-secr
 
 ---
 
-## 🗂️ Layout
+## Layout
 
 ```text
 Segfault/
-├── 🧬 bpf/                 XDP + tc datapath
+├── bpf/                    XDP + tc datapath
 │   ├── segfault.bpf.c      admission program and egress observer
 │   ├── parse.h             bounded Eth / VLAN / IP / UDP / DNS parser
 │   ├── limit.h             GCRA token buckets
 │   ├── slip.h              truncated TC=1 reply builder
-│   ├── siphash.h · cookie.h    RFC 9018 cookie validation
+│   ├── cookie.h            RFC 9018 cookie validation
 │   └── maps.h · shared.h   pinned maps and shared types
-├── 🦀 crates/
+├── crates/
 │   ├── core/               config, maps, stats
 │   ├── cli/                the `segfault` controller
 │   ├── gen/                flood generator and prober
 │   └── bench/              report and chart builder
-├── 🧪 lab/
+├── lab/
 │   ├── bench/run.sh        full baseline × scenario matrix
 │   ├── dns/                Unbound configs
 │   ├── nft/                nftables baselines
 │   ├── netns/              single-host e2e
 │   └── vm/                 two-VM lab setup
-├── ✅ tests/               parser unit + fuzz tests
-├── ⚙️ configs/             segfault.toml
-├── 📚 docs/                pseudocode · architecture · benchmarks
-├── 📈 results/             raw/ (IPv4) · raw6*/ (IPv6) · raw-rec*/ (recursive) · charts
-└── 📦 submission/          report PDF · deck PDF · video frames
+├── tests/                  parser unit + fuzz tests
+├── configs/                segfault.toml
+├── docs/                   pseudocode · architecture · benchmarks
+├── results/                raw/ (IPv4) · raw6*/ (IPv6) · raw-rec*/ (recursive) · charts
+└── submission/             project report PDF · deck PDF · video frames
 ```
 
 ---
 
+<div align="center">
 
+## Team Segfault
 
-## 👥 Team Segfault
+**Debangan Mali**  ·  **Saraswata Chatterjee**  ·  **Partha Chakraborty** *(Faculty mentor)*
 
-**Debangan Mali** · **Saraswata Chatterjee** · **Partha Chakraborty** *(Faculty mentor)*
+Institute of Engineering & Management, Kolkata  ·  Team A3-PS022-TC005
 
-Institute of Engineering & Management, Kolkata · Team A3-PS022-TC005
+debanganmali99@gmail.com
 
-📧 debanganmali99@gmail.com
+</div>
 
-## 📜 License
+## License
 
 Released under the terms in [`LICENSE`](LICENSE). Third-party licence texts are in [`LICENSES/`](LICENSES/).
