@@ -53,7 +53,7 @@ Segfault replaces *"how fast is this source?"* with two questions — **who is t
 
 | | |
 |---|---|
-| **Demo video** | [Watch on YouTube](https://youtu.be/PQQvaYzG-lU) |
+| **Demo video** | [Watch on YouTube](https://youtu.be/2WzXLvkn-UY) |
 | **Presentation deck (PDF)** | [`submission/Segfault_Deck.pdf`](submission/Segfault_Deck.pdf) |
 | **Project report (PDF)** | [`submission/Segfault_Submission.pdf`](submission/Segfault_Submission.pdf) |
 
