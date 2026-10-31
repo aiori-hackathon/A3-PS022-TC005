@@ -36,6 +36,7 @@ echo "ramp: baseline=$BASELINE scenario=$SCENARIO threads=$THREADS secs=$SECS"
 printf "%-10s %-13s %-8s %-9s %-10s %-10s\n" "rate_pps" "achieved_pps" "goodput" "p99_us" "soft_max%" "idle_min%"
 for R in $RATES; do
     cpu_snapshot > /tmp/cpu_a
+    # shellcheck disable=SC2029  # vars intentionally expand locally before the remote runs
     out=$(ssh "$GEN_HOST" "$GEN_BIN run --server $SERVER_IP --scenario $SCENARIO --pps $R --threads $THREADS --probe-qps 200 --secs $SECS" 2>/dev/null)
     cpu_snapshot > /tmp/cpu_b
     fs=$(grep -o 'flood_sent=[0-9]*' <<<"$out" | head -1 | cut -d= -f2)

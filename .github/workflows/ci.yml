@@ -1,4 +1,4 @@
-# Build and lint on every push to main and every pull request.
+# Build, test and lint on every push to main and every pull request.
 name: ci
 
 on:
@@ -34,6 +34,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+      - name: Install build deps
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends clang llvm libbpf-dev libelf-dev zlib1g-dev pkg-config
       - name: Install pinned toolchain
         run: rustup toolchain install
       - uses: actions/cache@v4
@@ -43,6 +45,8 @@ jobs:
             ~/.cargo/git
             target
           key: cargo-${{ runner.os }}-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+      - name: Build BPF object (the CLI embeds it)
+        run: make bpf
       - name: Check format and clippy
         run: make lint-rust
       - name: Unit tests

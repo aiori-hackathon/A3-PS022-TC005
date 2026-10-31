@@ -1,0 +1,25 @@
+# Kernel-level checks that need a real BPF-capable kernel and root.
+# Runs ONLY on a self-hosted runner you register on your Ubuntu target VM
+# with the labels: self-hosted, linux, segfault-lab.
+name: lab
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: kernel verifier + e2e
+    runs-on: [self-hosted, linux, segfault-lab]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build BPF object and binaries
+        run: make build
+      - name: Remove any stale verifier test pin
+        run: sudo rm -f /sys/fs/bpf/segfault_verify
+      - name: Load the datapath through the kernel verifier
+        run: make verify
+      - name: Remove the verifier test pin
+        if: always()
+        run: sudo rm -f /sys/fs/bpf/segfault_verify
+      - name: Single-host netns smoke test
+        run: sudo make e2e

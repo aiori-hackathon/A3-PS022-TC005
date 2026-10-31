@@ -20,6 +20,7 @@ mkdir -p "$OUT"
 echo "segfault bench: scenarios=[${SCENARIOS[*]}] repeats=$REPEATS secs=$SECS gen=$GEN_HOST"
 
 # Preflight: the generator must actually be able to send the (spoofed) flood, or every number is meaningless.
+# shellcheck disable=SC2029  # vars intentionally expand locally before the remote runs
 pre=$(ssh "$GEN_HOST" "$GEN_BIN run --server $SERVER_IP --scenario single --pps 1000 --probe-qps 10 --secs 2" 2>&1)
 if ! grep -q 'flood_sent=[1-9]' <<< "$pre"; then
     echo "PREFLIGHT FAILED: the generator on $GEN_HOST sent no flood packets."
@@ -48,6 +49,7 @@ run_one() {
     sleep 1
     # Repeat each combination so the report can take a stable median.
     for k in $(seq 1 "$REPEATS"); do
+        # shellcheck disable=SC2029  # vars intentionally expand locally before the remote runs
         ssh "$GEN_HOST" "$GEN_BIN run --server $SERVER_IP --scenario $scenario --pps $PPS --probe-qps $PROBE_QPS --secs $SECS --seed $k" \
             > "$OUT/${baseline}-${scenario}-r${k}.txt" 2>/dev/null
         grep RESULT "$OUT/${baseline}-${scenario}-r${k}.txt" || echo "  (no RESULT on run $k; check gen host)"

@@ -46,20 +46,20 @@ sleep 1
 
 # 4. configure pktgen: clone the gen device across THREADS CPUs, UDP/53 small packets
 for t in $(seq 0 $((THREADS-1))); do
-  echo "rem_device_all" > /proc/net/pktgen/kpktgend_$t 2>/dev/null
-  echo "add_device ${IFACE_GEN}@$t" > /proc/net/pktgen/kpktgend_$t
+  echo "rem_device_all" > "/proc/net/pktgen/kpktgend_$t" 2>/dev/null
+  echo "add_device ${IFACE_GEN}@$t" > "/proc/net/pktgen/kpktgend_$t"
   D=/proc/net/pktgen/${IFACE_GEN}@$t
-  echo "count 0"            > $D
-  echo "clone_skb 0"        > $D
-  echo "pkt_size $PKT"      > $D
-  echo "delay 0"            > $D
-  echo "dst 10.53.0.10"     > $D
-  echo "dst_mac $MAC"       > $D
-  echo "udp_src_min 1024"   > $D
-  echo "udp_src_max 65000"  > $D
-  echo "udp_dst_min 53"     > $D
-  echo "udp_dst_max 53"     > $D
-  echo "flag UDPSRC_RND"    > $D
+  echo "count 0"            > "$D"
+  echo "clone_skb 0"        > "$D"
+  echo "pkt_size $PKT"      > "$D"
+  echo "delay 0"            > "$D"
+  echo "dst 10.53.0.10"     > "$D"
+  echo "dst_mac $MAC"       > "$D"
+  echo "udp_src_min 1024"   > "$D"
+  echo "udp_src_max 65000"  > "$D"
+  echo "udp_dst_min 53"     > "$D"
+  echo "udp_dst_max 53"     > "$D"
+  echo "flag UDPSRC_RND"    > "$D"
 done
 
 # 5. run for SECS, sampling the busiest CPU's softirq and the XDP-processed count
@@ -78,7 +78,7 @@ PROC=$(( (XP_B - XP_A) / SECS ))
 # 6. sum pktgen pps across threads
 TOT=0
 for t in $(seq 0 $((THREADS-1))); do
-  PPS=$(grep -oE '[0-9]+pps' /proc/net/pktgen/${IFACE_GEN}@$t 2>/dev/null | head -1 | tr -dc '0-9')
+  PPS=$(grep -oE '[0-9]+pps' "/proc/net/pktgen/${IFACE_GEN}@$t" 2>/dev/null | head -1 | tr -dc '0-9')
   TOT=$(( TOT + ${PPS:-0} ))
 done
 CPU=$(awk 'BEGIN{smax=0;imin=100}

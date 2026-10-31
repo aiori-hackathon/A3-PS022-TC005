@@ -1,0 +1,40 @@
+# Build artifacts and publish a GitHub Release when a version tag (v*) is pushed.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    name: build + publish release
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install build deps
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends clang llvm libbpf-dev libelf-dev zlib1g-dev pkg-config
+      - name: Install pinned toolchain
+        run: rustup toolchain install
+      - name: Build BPF object and release binaries
+        run: make build
+      - name: Package artifacts
+        run: |
+          mkdir -p dist
+          cp target/release/segfault target/release/segfault-gen target/release/segfault-bench dist/
+          cp target/bpf/segfault.bpf.o dist/
+          tar -C dist -czf segfault-${{ github.ref_name }}-x86_64-linux.tar.gz .
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Segfault ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            segfault-${{ github.ref_name }}-x86_64-linux.tar.gz
+            submission/Segfault_Deck.pdf
+            submission/Segfault_Submission.pdf
