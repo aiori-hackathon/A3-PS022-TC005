@@ -256,6 +256,29 @@ Method and integrity checks: [`docs/benchmarks.md`](docs/benchmarks.md)
 
 ---
 
+## Run from a release
+
+Prefer prebuilt binaries? Download the latest tarball from the [Releases page](https://github.com/aiori-hackathon/A3-PS022-TC005/releases) — no toolchain needed.
+
+```bash
+tar xzf segfault-v1.0-x86_64-linux.tar.gz   # unpacks: segfault, segfault-gen, segfault-bench, segfault.bpf.o
+chmod +x segfault segfault-gen segfault-bench
+
+sudo ./segfault doctor                 # check the host for XDP, bpffs and tools
+sudo ./segfault up -i eth0 --shadow    # attach safely: runs the logic, drops nothing
+./segfault stats                       # watch the live counters
+./segfault why 10.53.0.20              # explain the verdict for one source
+sudo ./segfault down -i eth0           # detach and remove pinned state
+
+# when you are ready to enforce for real, drop --shadow:
+sudo ./segfault up -i eth0             # sensible defaults; add --config <file> for a custom policy
+```
+
+- **Needs:** Linux ≥ 6.x with XDP support, root, and `libelf1 zlib1g libzstd1` — usually already present (`sudo apt-get install -y libelf1 zlib1g libzstd1` if not).
+- The BPF datapath is compiled into the `segfault` binary; the loose `segfault.bpf.o` in the tarball is only for inspection or `bpftool`.
+- Optional: `sudo ./segfault serve` exposes Prometheus `/metrics` and a dashboard on `:9108`; `sudo ./segfault cookie-secret <32-hex>` sets the RFC 9018 secret shared with your resolver.
+- The binaries are `x86_64` Linux. For the full two-VM lab and the benchmark matrix, build from source below.
+
 ## Build and run
 
 ```bash
