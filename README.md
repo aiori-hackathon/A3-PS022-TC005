@@ -5,6 +5,28 @@
 Most rate limiters ask *how fast is this source sending?* Segfault asks a better pair of
 questions: *is this source real, and how much does its query actually cost the server?*
 
+## Demo
+
+📺 **Demo video:** _link coming soon_
+<!-- When the video is up, replace the line above with:  [▶ Watch the demo](PASTE_YOUTUBE_LINK_HERE) -->
+
+## Results
+
+Legitimate-client goodput under attack, across five baselines (median of 3; *queries completed / p99 ms*):
+
+| Scenario | none | nftables | nft-netdev | fixed-xdp | **segfault** |
+|----------|------|----------|------------|-----------|--------------|
+| distributed | 116 / 414 | 53 / 529 | 28 / 594 | 119 / 544 | **3719 / 1.1** |
+| adaptive | 180 / 422 | 38 / 620 | 60 / 451 | 65 / 432 | **3670 / 1.1** |
+| prefix-spoof | 0 | 0 | 0 | 0 | **3729 / 0.4** |
+| water-torture | 113 / 392 | 49 / 469 | 52 / 592 | 68 / 680 | **3684 / 1.1** |
+
+Segfault held **100% goodput** in every scenario while absorbing 7–12 M packets/run; under
+**prefix-spoof** it served **3,729** legitimate queries where every baseline served **0**. At
+~290 cycles/packet it sits in the line-rate regime of production XDP. The full matrix (IPv4 + IPv6 +
+recursive-realism) is in [`results/`](results/); see [`docs/benchmarks.md`](docs/benchmarks.md) for
+the method and [`docs/pseudocode.md`](docs/pseudocode.md) for the datapath algorithm.
+
 ## Three ideas
 
 1. **Trust before rate.** Unknown sources (T0) get **no per-source state** — only a fixed-memory
@@ -70,6 +92,12 @@ crates/     core (config/maps/stats) · cli (segfault) · gen (generator+prober)
 lab/        vm/ netns/ dns/ nft/ bench/                              (lab, baselines, orchestrator)
 tests/      bpf/parse_test.c  bpf/fuzz_parse.c                       (parser unit + fuzz)
 configs/    segfault.toml
+docs/       pseudocode.md · architecture.md · benchmarks.md
+results/    raw/ (IPv4) · raw6*/ (IPv6) · raw-rec*/ (recursive) · results.csv · charts
 ```
 
 See `docs/lab-setup.md` for the full two-VM setup.
+
+## Team
+
+Debangan Mali · Saraswata Chatterjee · Partha Chakraborty (Faculty) — IEM Kolkata · Team A3-PS022-TC005
