@@ -1,48 +1,75 @@
-# Segfault
+# Segfault — Drop the Flood, Keep the Queries
 
-DNS-aware XDP rate limiter for DNS query floods, with a Rust CLI and a one-command benchmark suite. Built by team **Segfault** for AIORI hackathon problem statement **PS-022** (eBPF/XDP Rate Limiting for DNS Query Floods in a Lab).
+**Team A3-PS022-TC005 · IEM Kolkata.** eBPF/XDP rate limiting for DNS query floods (PS-022).
 
-> Status: **Part 0 — Foundations** (`v0.0.1`). The XDP program is a pass-through stub; the datapath lands in Part 1.
+Most rate limiters ask *how fast is this source sending?* Segfault asks a better pair of
+questions: *is this source real, and how much does its query actually cost the server?*
 
-## What it will do
+## Three ideas
 
-- Parse Ethernet, VLAN, IPv4/IPv6, UDP 53 and the DNS header with bounded checks at the XDP hook.
-- Enforce per-source, per-prefix (/24, /64) and global token buckets before the kernel allocates an `sk_buff`.
-- Extras: TC-slip (truncated replies via `XDP_TX`), adaptive thresholds, shadow mode, strike bans.
-- `segfault bench` runs 3 scenarios × baselines (none, nftables, XDP) × repeats and writes CSV, charts and a report.
+1. **Trust before rate.** Unknown sources (T0) get **no per-source state** — only a fixed-memory
+   Count-Min sketch, so a spoofed flood can never exhaust memory. A source earns a real limiter (T1)
+   by behaving, and becomes *proven* (T2) only by completing TCP after a truncation hint.
+2. **Cost, not count.** A query is charged tokens by predicted work: ANY/large types, the DNSSEC
+   DO bit, and zones that are producing lots of NXDOMAIN (random-subdomain floods pay more
+   automatically — no special-case rule).
+3. **Measured capacity.** Limits are shares of the server's real measured capacity, not magic
+   numbers. The controller moves between CALM / GUARD / SIEGE from live observer feedback.
 
-## Quick start (Ubuntu 24.04 VM)
+Excess unknown queries get a **TC-slip**: a truncated (`TC=1`) reply via `XDP_TX`, never larger
+than the query, so reflection gain is at most `1/k`. A real client retries over TCP; the egress
+**observer** sees the TCP answer and promotes that client to proven. Spoofers can't.
+
+## Build and run
 
 ```bash
-git clone https://github.com/DebanganMALI/Segfault.git && cd Segfault
-make setup ROLE=target      # or ROLE=gen on the generator VM
-source ~/.cargo/env
-make build                  # BPF object + release binaries
-make verify                 # load the BPF object through the kernel verifier
-./target/release/segfault --version
+make setup ROLE=target        # toolchain (clang, libbpf, bpftool, Rust, Unbound)
+make build                    # BPF object + Rust release binaries
+make test test-c              # Rust + C parser unit tests
+make verify                   # load the datapath through the kernel verifier
+sudo make net ROLE=target IFACE=eth1
+
+# protect an interface:
+sudo ./target/release/segfault up -i eth1 --config configs/segfault.toml
+./target/release/segfault stats
+./target/release/segfault why 10.53.0.20
+sudo ./target/release/segfault down -i eth1
+
+# extras:
+./target/release/segfault-gen calibrate --server 10.53.0.10   # find capacity_qps
+sudo ./target/release/segfault cookie-secret 000102030405060708090a0b0c0d0e0f  # RFC 9018 proof path
+sudo ./target/release/segfault top            # live full-screen counters
+sudo ./target/release/segfault serve          # Prometheus /metrics + dashboard on :9108
 ```
 
-Full two-VM lab guide: [docs/lab-setup.md](docs/lab-setup.md). Run `make help` for every target.
+### Two proof paths to "proven" (T2)
+
+A source becomes **proven** either by (a) answering a TC-slip over **TCP** — the egress observer sees
+the TCP reply and promotes it — or (b) presenting a valid **RFC 9018 DNS Cookie**, which Segfault
+verifies in XDP with SipHash-2-4 against a secret shared with the resolver. A spoofer can do neither.
+Set the same secret on Segfault (`cookie-secret`) and Unbound (`cookie-secret:` in `lab/dns/unbound.conf`).
+
+Single-host smoke test (no second VM needed): `sudo make e2e`.
+
+## Benchmark
+
+Five baselines (no filter, nftables prerouting, nftables netdev-ingress, a plain fixed-threshold
+XDP limiter, and Segfault) across five scenarios (single, distributed-spoofed, pulsed
+random-subdomain, adaptive-under-threshold, prefix-spoof):
+
+```bash
+IFACE=eth1 GEN_HOST=kali@kali.mshome.net bash lab/bench/run.sh
+./target/release/segfault-bench results/raw -o results   # -> results.csv, goodput.svg, report.md
+```
 
 ## Layout
 
-| Path | Contents |
-| --- | --- |
-| `bpf/` | XDP datapath in C (libbpf) |
-| `crates/core` | Loader, maps, config (`segfault-core`) |
-| `crates/cli` | `segfault` binary (`segfault-cli`) |
-| `crates/gen` | Synthetic flood generator (`segfault-gen`) |
-| `crates/bench` | Benchmark runner and report writer (`segfault-bench`) |
-| `lab/` | VM, netns, DNS server and nftables lab assets |
-| `configs/` | Example `segfault.toml` files |
-| `tests/` | BPF packet tests and end-to-end tests |
-| `docs/` | Setup, usage and architecture docs |
-| `results/` | Benchmark outputs used in the report |
+```
+bpf/        shared.h parse.h maps.h limit.h slip.h segfault.bpf.c   (XDP + tc datapath)
+crates/     core (config/maps/stats) · cli (segfault) · gen (generator+prober) · bench (report)
+lab/        vm/ netns/ dns/ nft/ bench/                              (lab, baselines, orchestrator)
+tests/      bpf/parse_test.c  bpf/fuzz_parse.c                       (parser unit + fuzz)
+configs/    segfault.toml
+```
 
-## Ethics
-
-Floods are generated only inside an isolated lab network. Never point `segfault gen` at systems you do not own.
-
-## License
-
-Userspace code (Rust, scripts): [MIT](LICENSE). BPF program in `bpf/`: [GPL-2.0](LICENSES/GPL-2.0.txt), required by GPL-only kernel helpers.
+See `docs/lab-setup.md` for the full two-VM setup.
