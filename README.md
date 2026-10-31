@@ -321,7 +321,7 @@ Segfault/
 
 <div align="center">
 
-## Team Segfault
+## Team Segfault:
 
 **Debangan Mali**  ·  **Saraswata Chatterjee**  ·  **Partha Chakraborty** *(Faculty mentor)*
 
