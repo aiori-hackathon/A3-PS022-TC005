@@ -61,85 +61,93 @@ Segfault replaces *"how fast is this source?"* with two questions — **who is t
 
 ## The mathematics
 
-<details open>
-<summary><b>GCRA token buckets</b></summary>
+### GCRA token buckets
 
 Every pool, source and prefix is limited by a Generic Cell Rate Algorithm bucket — a leaky bucket with no timers, stored as one nanosecond timestamp and updated with a lock-free CAS. With rate $\lambda$ and burst $B$:
 
-$$T = \frac{10^9}{\lambda}\ \text{ns}, \qquad \tau = T \cdot B$$
+```math
+T = \frac{10^9}{\lambda}\ \text{ns}, \qquad \tau = T \cdot B
+```
 
 A query of cost $w$ arriving at $t_a$ is admitted iff
 
-$$t_a \ge \text{TAT} - \tau$$
+```math
+t_a \ge \text{TAT} - \tau
+```
 
 and on admission
 
-$$\text{TAT} \leftarrow \max(t_a,\ \text{TAT}) + w \cdot T$$
+```math
+\text{TAT} \leftarrow \max(t_a,\ \text{TAT}) + w \cdot T
+```
 
 A rejected query does not advance the bucket, so a rejected flood cannot starve later legitimate queries.
-</details>
 
-<details>
-<summary><b>Capacity allocation</b></summary>
+### Capacity allocation
 
 With measured capacity $C$ and proven / unknown shares $\sigma_p,\ \sigma_u$:
 
-$$\lambda_{T2} = C\,\sigma_p, \qquad \lambda_{T0} = (C - \lambda_{T2})\,\sigma_u, \qquad \lambda_{T1} = \max\big((C-\lambda_{T2})(1-\sigma_u),\ 0.05\,C\big)$$
+```math
+\lambda_{T2} = C\,\sigma_p, \qquad \lambda_{T0} = (C - \lambda_{T2})\,\sigma_u, \qquad \lambda_{T1} = \max\big((C-\lambda_{T2})(1-\sigma_u),\ 0.05\,C\big)
+```
 
 Lab defaults $C = 20{,}000$, $\sigma_p = 0.5$, $\sigma_u = 0.3$ reserve 10,000 q/s for proven clients and cap unknown traffic at 3,000 q/s.
-</details>
 
-<details>
-<summary><b>Count-Min sketch (stateless T0)</b></summary>
+### Count-Min sketch (stateless T0)
 
-$$\hat{c}(x) = \min_{1 \le j \le d} C\big[j,\ h_j(x) \bmod w\big]$$
+```math
+\hat{c}(x) = \min_{1 \le j \le d} C\big[j,\ h_j(x) \bmod w\big]
+```
 
-$$\hat{c}(x) \le c(x) + \varepsilon N \quad \text{with probability} \ge 1-\delta, \qquad w = \lceil e/\varepsilon \rceil,\ d = \lceil \ln(1/\delta) \rceil$$
+```math
+\hat{c}(x) \le c(x) + \varepsilon N \quad \text{with probability} \ge 1-\delta, \qquad w = \lceil e/\varepsilon \rceil,\ d = \lceil \ln(1/\delta) \rceil
+```
 
 $O(d)$ memory touches per packet, independent of how many sources are spoofed.
-</details>
 
-<details>
-<summary><b>Cost weighting</b></summary>
+### Cost weighting
 
-$$w = w_0 \cdot m_{\text{ANY}}^{[\text{ANY}]} \cdot m_{\text{DO}}^{[\text{DO}]} \cdot m_{\text{big}}^{[\text{large}]} \cdot z(\text{zone})$$
+```math
+w = w_0 \cdot m_{\text{ANY}}^{[\text{ANY}]} \cdot m_{\text{DO}}^{[\text{DO}]} \cdot m_{\text{big}}^{[\text{large}]} \cdot z(\text{zone})
+```
 
-Defaults $m_{\text{ANY}} = 8,\ m_{\text{DO}} = 2,\ m_{\text{big}} = 3$; $z(\text{zone})$ rises for zones whose NXDOMAIN ratio exceeds 0.2 or 0.5.
-</details>
+Defaults $m_{\text{ANY}} = 8$, $m_{\text{DO}} = 2$, $m_{\text{big}} = 3$; $z(\text{zone})$ rises for zones whose NXDOMAIN ratio exceeds 0.2 or 0.5.
 
-<details>
-<summary><b>Proof of address — RFC 9018 cookie</b></summary>
+### Proof of address — RFC 9018 cookie
 
-$$SC = \text{SipHash-2-4}_k(\text{client-cookie} \,\|\, \text{version} \,\|\, \text{reserved} \,\|\, \text{timestamp} \,\|\, \text{client-IP})$$
+```math
+SC = \text{SipHash-2-4}_k(\text{client-cookie} \,\|\, \text{version} \,\|\, \text{reserved} \,\|\, \text{timestamp} \,\|\, \text{client-IP})
+```
 
 The client IP is an authenticated input, so a cookie minted for one address is invalid from any other.
-</details>
 
-<details>
-<summary><b>Bounded reflection (TC-slip)</b></summary>
+### Bounded reflection (TC-slip)
 
-$$\text{reflected rate} \le \frac{1}{k}\,\lambda_{\text{flood}}, \qquad A = \frac{\text{bytes}_{\text{out}}}{\text{bytes}_{\text{in}}} \le 1$$
+```math
+\text{reflected rate} \le \frac{1}{k}\,\lambda_{\text{flood}}, \qquad A = \frac{\text{bytes}_{\text{out}}}{\text{bytes}_{\text{in}}} \le 1
+```
 
 Reflection is bounded, not eliminated. Lab setting $k = 2$.
-</details>
 
-<details>
-<summary><b>Adaptive controller</b></summary>
+### Adaptive controller
 
 With load $L = a/C$, drop-fraction $\varphi = b/(a+b)$ and response ratio $\rho$:
 
-$$\text{busy} = (L \ge 0.7) \lor (\varphi > 0.2) \lor (\rho < 0.98)$$
+```math
+\text{busy} = (L \ge 0.7) \lor (\varphi > 0.2) \lor (\rho < 0.98)
+```
 
-$$\text{under\_attack} = (\varphi > 0.6) \lor (\rho < 0.85)$$
+```math
+\text{under-attack} = (\varphi > 0.6) \lor (\rho < 0.85)
+```
 
-CALM → GUARD on *busy*, GUARD → SIEGE on *under\_attack*. Escalation is immediate; de-escalation needs 10 s of stability.
-</details>
+CALM → GUARD on `busy`, GUARD → SIEGE on `under_attack`. Escalation is immediate; de-escalation needs 10 s of stability.
 
-<details>
-<summary><b>Throughput ceiling</b></summary>
+### Throughput ceiling
 
-$$C_{\max} = \min\!\left(R_{\text{line}},\ N_{\text{core}} \cdot \frac{f}{c}\right), \qquad c \approx 290\ \text{cycles/packet}$$
-</details>
+```math
+C_{\max} = \min\!\left(R_{\text{line}},\ N_{\text{core}} \cdot \frac{f}{c}\right), \qquad c \approx 290\ \text{cycles/packet}
+```
 
 ---
 
@@ -306,7 +314,7 @@ Segfault/
 ├── configs/                segfault.toml
 ├── docs/                   pseudocode · architecture · benchmarks
 ├── results/                raw/ (IPv4) · raw6*/ (IPv6) · raw-rec*/ (recursive) · charts
-└── submission/             project report PDF · deck PDF · video frames
+└── submission/             project report PDF · deck PDF · video script
 ```
 
 ---
