@@ -1,18 +1,6 @@
-# Build output
-/target/
+/target
+**/target
 *.o
-*.skel.rs
-
-# Bench scratch (final results are committed)
-/results/tmp/
-*.pcap
-
-# Editors and OS
-.vscode/
-.idea/
-*.swp
+*.bpf.o
 .DS_Store
 Thumbs.db
-
-# Submission repo kept separately
-/A3-PS022-TC005/
