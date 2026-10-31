@@ -1,0 +1,1 @@
+RESULT scenario=adaptive flood_pps=200000 flood_sent=4433796 probe_sent=68 probe_ok=65 goodput=0.9559 collateral=0.0441 p50_us=342608 p99_us=502040
