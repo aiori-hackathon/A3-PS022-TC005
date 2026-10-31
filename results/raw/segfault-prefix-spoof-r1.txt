@@ -1,0 +1,1 @@
+RESULT scenario=prefix-spoof flood_pps=200000 flood_sent=7413728 probe_sent=1435 probe_ok=1422 goodput=0.9909 collateral=0.0091 p50_us=188 p99_us=532
