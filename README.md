@@ -323,7 +323,7 @@ Segfault/
 
 ## Team Segfault
 
-**Debangan Mali**  ·  **Saraswata Chatterjee**  ·  **Partha Chakraborty** *(Faculty mentor)*
+**Debangan Mali**  ·  **SaraswataChatterjee**  ·  **Partha Chakraborty** *(Faculty mentor)*
 
 Institute of Engineering & Management, Kolkata  ·  Team A3-PS022-TC005
 
