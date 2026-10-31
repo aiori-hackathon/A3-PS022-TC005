@@ -1,0 +1,1 @@
+RESULT scenario=pulse flood_pps=200000 flood_sent=9032588 probe_sent=760 probe_ok=758 goodput=0.9974 collateral=0.0026 p50_us=3053 p99_us=209815
