@@ -7,8 +7,7 @@ questions: *is this source real, and how much does its query actually cost the s
 
 ## Demo
 
-📺 **Demo video:** _link coming soon_
-<!-- When the video is up, replace the line above with:  [▶ Watch the demo](PASTE_YOUTUBE_LINK_HERE) -->
+📺 **Demo video:** [▶ Watch the demo](https://youtu.be/PQQvaYzG-lU)
 
 ## Results
 
